@@ -1,31 +1,75 @@
-// src/context/WishlistContext.jsx
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 
 const WishlistContext = createContext(null);
 
 export const WishlistProvider = ({ children }) => {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => {
+    try {
+      const savedWishlist = localStorage.getItem("wishlist");
 
+      if (!savedWishlist) {
+        return [];
+      }
+
+      const parsedWishlist = JSON.parse(savedWishlist);
+
+      return Array.isArray(parsedWishlist) ? parsedWishlist : [];
+    } catch (error) {
+      console.error("Error loading wishlist:", error);
+      return [];
+    }
+  });
+
+  // Save wishlist whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("wishlist", JSON.stringify(items));
+    } catch (error) {
+      console.error("Error saving wishlist:", error);
+    }
+  }, [items]);
+
+  // Add product
   const addToWishlist = (product) => {
+    if (!product) return;
+
     setItems((prev) => {
-      if (prev.find((p) => p.id === product.id)) return prev;
+      const exists = prev.some((item) => item.id === product.id);
+
+      if (exists) {
+        return prev;
+      }
+
       return [...prev, product];
     });
   };
 
+  // Remove product
   const removeFromWishlist = (id) => {
-    setItems((prev) => prev.filter((p) => p.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  // Add / Remove
   const toggleWishlist = (product) => {
     if (!product) return;
-    const exists = items.find((p) => p.id === product.id);
-    if (exists) removeFromWishlist(product.id);
-    else addToWishlist(product);
+
+    setItems((prev) => {
+      const exists = prev.some((item) => item.id === product.id);
+
+      if (exists) {
+        return prev.filter((item) => item.id !== product.id);
+      }
+
+      return [...prev, product];
+    });
   };
 
-  const inWishlist = (id) => items.some((p) => p.id === id);
+  // Check whether product is in wishlist
+  const inWishlist = (id) => {
+    return items.some((item) => item.id === id);
+  };
 
+  // Wishlist count
   const count = items.length;
 
   return (

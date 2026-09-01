@@ -14,7 +14,6 @@ import AllProducts from "./pages/AllProducts";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
-import Checkout from "./pages/Checkout";
 import Login from "./pages/register/Login";
 import Signup from "./pages/register/Signup";
 import Orders from "./pages/Orders";
@@ -50,16 +49,17 @@ function App() {
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
-            <Route
-              path="/checkout"
-              element={user ? <Checkout /> : <Navigate to="/login" replace />}
-            />
-            <Route path="/signup" element={<Signup />} />
+
             <Route
               path="/orders"
               element={user ? <Orders /> : <Navigate to="/login" replace />}
             />
           </Route>
+          {/* AUTH ROUTES WITHOUT NAVBAR */}
+          <Route
+            path="/signup"
+            element={!user ? <Signup /> : <Navigate to="/" replace />}
+          />
           {/* LOGIN ROUTE */}
           <Route
             path="/login"
@@ -72,12 +72,6 @@ function App() {
                 <Navigate to="/" replace />
               )
             }
-          />
-
-          {/* PROTECTED USER ROUTE */}
-          <Route
-            path="/orders"
-            element={user ? <Orders /> : <Navigate to="/login" replace />}
           />
 
           {/* ADMIN ROUTES */}

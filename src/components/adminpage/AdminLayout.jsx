@@ -39,7 +39,7 @@ const AdminLayout = () => {
       />
 
       {/* Main Layout */}
-      <div className="flex overflow-hidden lg:pb-12">
+      <div className="flex min-h-[calc(100vh-5rem)]">
         {/* Sidebar */}
         <AdminSidebar
           isOpen={sidebarOpen}
@@ -48,14 +48,12 @@ const AdminLayout = () => {
 
         {/* Main Content Area */}
         <main
-          className={`
-            flex-1 transition-all duration-300 ease-in-out
-            ${sidebarOpen ? "ml-64" : "ml-0"}
-            lg:ml-0 xl:ml-64
-            lg:pl-6 xl:pl-0
-            p-4 sm:p-6 md:p-8 lg:p-10
-            overflow-y-auto
-          `}
+          className="
+                flex-1
+                min-w-0
+                p-4 sm:p-6 lg:p-8
+                overflow-y-auto
+              "
         >
           {/* Content Container */}
           <div className="max-w-7xl mx-auto w-full">

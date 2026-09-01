@@ -24,6 +24,9 @@ const UserMenu = () => {
   const handleProfile = () => {
     navigate("/profile");
   };
+  const handleOrders = () => {
+    navigate("/orders");
+  };
 
   return (
     <Menu as="div" className="relative">
@@ -86,6 +89,7 @@ const UserMenu = () => {
                 <Menu.Item>
                   {({ active }) => (
                     <button
+                      onClick={handleOrders}
                       className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 rounded-lg ${
                         active ? "bg-gray-800/60 text-white" : "text-gray-200"
                       }`}

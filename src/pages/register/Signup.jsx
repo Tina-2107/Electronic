@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
+import Login from "./Login";
 
 const SignupPage = () => {
   const [form, setForm] = useState({
@@ -94,10 +95,10 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-950 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10">
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-14 items-center">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-950 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
         {/* LEFT SIDE – Brand / Info */}
-        <div className="hidden md:flex flex-col h-full justify-center">
+        <div className="hidden md:flex flex-col justify-center">
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
               <img src={Logo} alt="Dlight Logo" />
@@ -143,7 +144,7 @@ const SignupPage = () => {
         </div>
 
         {/* RIGHT SIDE – Signup Card */}
-        <div className="bg-gray-900/80 border border-gray-800/80 rounded-2xl shadow-2xl shadow-black/40 backdrop-blur-md px-5 py-6 sm:px-7 sm:py-8 md:px-8 lg:px-10">
+        <div className="w-full bg-gray-900/80 border border-gray-800/80 rounded-2xl shadow-2xl shadow-black/40 backdrop-blur-md px-5 py-6 sm:px-7 sm:py-7 md:px-8 lg:px-9">
           {/* Mobile heading */}
           <div className="md:hidden mb-6">
             <h1 className="text-2xl font-semibold text-white">
@@ -308,12 +309,12 @@ const SignupPage = () => {
                   Terms &amp; Conditions
                 </a>{" "}
                 and{" "}
-                <a
-                  href="/privacy"
+                <Link
+                  to="/privacy"
                   className="text-yellow-300 hover:text-yellow-200"
                 >
                   Privacy Policy
-                </a>
+                </Link>
                 .
               </p>
             </div>
@@ -322,7 +323,7 @@ const SignupPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 w-full rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 py-2.5 text-sm md:text-base font-semibold text-gray-900 shadow-lg shadow-yellow-500/30 hover:from-yellow-300 hover:to-yellow-400 transition-colors"
+              className="mt-2 w-full rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 py-3 text-sm md:text-base font-semibold text-gray-900 shadow-lg shadow-yellow-500/30 hover:from-yellow-300 hover:to-yellow-400 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? "Creating Account..." : "Sign Up"}
             </button>
@@ -330,12 +331,12 @@ const SignupPage = () => {
             {/* Login link */}
             <p className="text-xs sm:text-sm text-gray-400 text-center pt-2">
               Already have an account?{" "}
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="text-yellow-300 hover:text-yellow-200 font-medium"
               >
                 Log in
-              </a>
+              </Link>
             </p>
           </form>
         </div>

@@ -1,5 +1,4 @@
 import React from "react";
-import Layout from "../components/common/Layout";
 
 import HeroBanner from "../components/homepage/HeroBanner";
 import CategoryGrid from "../components/homepage/CategoryGrid";
@@ -16,14 +15,14 @@ const Home = () => {
     navigate(`/products?category=${encodeURIComponent(categoryName)}`);
   };
   return (
-    <Layout>
+    <>
       <HeroBanner />
       <BrandSlider />
       <CategoryGrid onCategoryClick={handleCategoryClick} />
       <OffersSection />
       <FeaturedProducts />
       <SafetyHighlights />
-    </Layout>
+    </>
   );
 };
 

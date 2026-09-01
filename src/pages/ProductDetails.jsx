@@ -13,27 +13,61 @@ const ProductDetails = ({
   className = "",
 }) => {
   const [selectedQty, setSelectedQty] = useState(initialQty);
+
+  const { toggleWishlist } = useWishlist();
+
+  // Safely extract product data
   const {
+    name,
     brand,
     price,
     mrp,
     inStock,
     description,
-    images = [],
     features = [],
   } = product || {};
 
-  const handleAddToCart = () => {
-    if (onAddToCart) onAddToCart({ product, qty: selectedQty });
-  };
+  // Support both `images` and `image`
+  const images = product?.images?.length
+    ? product.images
+    : product?.image
+      ? [product.image]
+      : [];
 
-  const { toggleWishlist } = useWishlist();
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    if (onAddToCart) {
+      onAddToCart(product, selectedQty);
+    }
+  };
 
   const handleAddToWishlist = () => {
-    // If parent passed a custom handler use it — otherwise use wishlist context
-    if (onAddToWishlist) onAddToWishlist(product);
-    else toggleWishlist(product);
+    if (!product) return;
+
+    if (onAddToWishlist) {
+      onAddToWishlist(product);
+    } else {
+      toggleWishlist(product);
+    }
   };
+
+  // Prevent rendering empty product details
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-white mb-2">
+            Product not found
+          </h2>
+
+          <p className="text-gray-400 text-sm">
+            The product you're looking for does not exist.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -45,26 +79,27 @@ const ProductDetails = ({
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 rounded-2xl bg-gray-950 border border-gray-800/60 shadow-xl shadow-black/20 p-4 md:p-8">
         {/* LEFT: Product Images */}
         <div className="flex flex-col items-center">
+          {/* Main Image */}
           <div className="w-full flex items-center justify-center bg-gray-900/80 rounded-xl h-56 sm:h-72 lg:h-80 mb-4">
-            {images?.[0] ? (
+            {images[0] ? (
               <img
                 src={images[0]}
-                alt={name}
+                alt={name || "Product"}
                 className="w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 object-contain mx-auto"
               />
             ) : (
-              <span className="text-gray-500 text-sm">No image</span>
+              <span className="text-gray-500 text-sm">No image available</span>
             )}
           </div>
 
-          {/* Thumbnail strip (optional) */}
-          {images?.length > 1 && (
+          {/* Thumbnail Images */}
+          {images.length > 1 && (
             <div className="flex gap-2 mt-2">
               {images.map((img, idx) => (
                 <img
                   key={idx}
                   src={img}
-                  alt=""
+                  alt={`${name || "Product"} ${idx + 1}`}
                   className="w-12 h-12 rounded object-contain border border-gray-700"
                 />
               ))}
@@ -72,20 +107,22 @@ const ProductDetails = ({
           )}
         </div>
 
-        {/* RIGHT: Product Details & Actions */}
+        {/* RIGHT: Product Details */}
         <div className="flex flex-col justify-center space-y-5">
-          {/* Title + badges */}
+          {/* Title + Badges */}
           <div>
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white">
               {name}
             </h1>
-            <div className="flex items-center space-x-2 mt-2">
+
+            <div className="flex items-center flex-wrap gap-2 mt-2">
               {brand && (
                 <span className="px-2 py-1 rounded-full bg-yellow-400/15 text-yellow-300 text-xs uppercase">
                   {brand}
                 </span>
               )}
-              {inStock != null && (
+
+              {inStock !== undefined && (
                 <span
                   className={`px-2 py-1 rounded-full text-xs ${
                     inStock
@@ -99,22 +136,25 @@ const ProductDetails = ({
             </div>
           </div>
 
-          {/* Description + features */}
+          {/* Description */}
           {description && (
-            <p className="text-gray-300 text-sm md:text-base">{description}</p>
+            <p className="text-gray-300 text-sm md:text-base leading-relaxed">
+              {description}
+            </p>
           )}
 
-          {features?.length > 0 && (
+          {/* Features */}
+          {features.length > 0 && (
             <ul className="space-y-2 text-gray-400 pl-5 list-disc">
-              {features.map((feat, idx) => (
+              {features.map((feature, idx) => (
                 <li key={idx} className="text-xs sm:text-sm md:text-base">
-                  {feat}
+                  {feature}
                 </li>
               ))}
             </ul>
           )}
 
-          {/* PRICE */}
+          {/* Price */}
           {(price != null || mrp != null) && (
             <div className="flex items-baseline gap-3 mt-2">
               {price != null && (
@@ -122,47 +162,54 @@ const ProductDetails = ({
                   {formatCurrency(price)}
                 </span>
               )}
+
               {mrp != null && (
                 <span className="text-base text-gray-500 line-through">
                   {formatCurrency(mrp)}
                 </span>
               )}
+
+              {price != null && mrp != null && mrp > price && (
+                <span className="text-sm font-semibold text-emerald-400">
+                  {Math.round(((mrp - price) / mrp) * 100)}% OFF
+                </span>
+              )}
             </div>
           )}
 
-          {/* QTY & ACTIONS */}
+          {/* Quantity */}
           <div className="flex items-center gap-3 mt-4">
-            <label
-              htmlFor="qty"
-              className="text-sm text-gray-300 font-medium mr-2"
-            >
+            <label htmlFor="qty" className="text-sm text-gray-300 font-medium">
               Qty:
             </label>
+
             <select
               id="qty"
               value={selectedQty}
               onChange={(e) => setSelectedQty(Number(e.target.value))}
-              className="bg-gray-800/90 border border-gray-700/70 text-white rounded px-3 py-2 text-sm focus:ring-yellow-400"
+              className="bg-gray-800/90 border border-gray-700/70 text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
             >
-              {Array.from({ length: maxQty }, (_, i) => i + 1).map((q) => (
-                <option key={q} value={q}>
-                  {q}
+              {Array.from({ length: maxQty }, (_, i) => i + 1).map((qty) => (
+                <option key={qty} value={qty}>
+                  {qty}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="flex gap-4 mt-4">
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
             <button
               onClick={handleAddToCart}
-              className="flex-1 py-2 rounded-xl bg-yellow-400 text-gray-900"
+              disabled={inStock === false}
+              className="flex-1 py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add to Cart
+              {inStock === false ? "Out of Stock" : "Add to Cart"}
             </button>
 
             <button
-              className="flex-1 py-2 rounded-xl bg-gray-800 text-yellow-400 border border-yellow-400 font-semibold shadow hover:bg-yellow-500 hover:text-gray-900 transition"
               onClick={handleAddToWishlist}
+              className="flex-1 py-3 rounded-xl bg-gray-800 text-yellow-400 border border-yellow-400 font-semibold hover:bg-yellow-500 hover:text-gray-900 transition"
             >
               Add to Wishlist
             </button>

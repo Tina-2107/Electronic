@@ -1,5 +1,7 @@
 // components/homepage/OffersSection.jsx
+import { useNavigate } from "react-router-dom";
 const OffersSection = () => {
+  const navigate = useNavigate();
   return (
     <section id="deals" className="bg-gray-900 py-10 sm:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,7 +37,10 @@ const OffersSection = () => {
                   Save up to 60%
                 </span>
               </div>
-              <button className="inline-flex items-center px-5 py-2.5 rounded-xl bg-gray-950 text-yellow-300 text-sm font-semibold hover:bg-black/80 transition-colors">
+              <button
+                onClick={() => navigate("/products?brand=Schneider")}
+                className="inline-flex items-center px-5 py-2.5 rounded-xl bg-gray-950 text-yellow-300 text-sm font-semibold hover:bg-black/80 transition-colors"
+              >
                 Shop Schneider Deals
               </button>
             </div>
@@ -53,7 +58,10 @@ const OffersSection = () => {
 
           {/* Side stacked offers */}
           <div className="space-y-4">
-            <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4">
+            <div
+              onClick={() => navigate("/products?category=Lighting")}
+              className="cursor-pointer bg-gray-950 border border-gray-800 rounded-2xl p-4 hover:border-yellow-400/60 hover:-translate-y-1 transition-all"
+            >
               <img
                 src={
                   new URL("../../assets/images/HavelLED.jpeg", import.meta.url)
@@ -72,7 +80,10 @@ const OffersSection = () => {
                 Now at ₹680
               </p>
             </div>
-            <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4">
+            <div
+              onClick={() => navigate("/products?category=Decorative Lighting")}
+              className="cursor-pointer bg-gray-950 border border-gray-800 rounded-2xl p-4 hover:border-yellow-400/60 hover:-translate-y-1 transition-all"
+            >
               <img
                 src={
                   new URL("../../assets/images/deco.jpeg", import.meta.url).href

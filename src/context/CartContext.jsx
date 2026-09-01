@@ -1,4 +1,5 @@
 // src/context/CartContext.jsx
+
 import { createContext, useState, useEffect } from "react";
 
 const CartContext = createContext(null);
@@ -7,13 +8,13 @@ export const CartProvider = ({ children }) => {
   const [items, setItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem("cart");
-
       return savedCart ? JSON.parse(savedCart) : [];
     } catch (error) {
       console.error("Error loading cart:", error);
       return [];
     }
   });
+
   useEffect(() => {
     try {
       localStorage.setItem("cart", JSON.stringify(items));
@@ -23,20 +24,39 @@ export const CartProvider = ({ children }) => {
   }, [items]);
 
   const addToCart = (product, qty = 1) => {
-    const stock = Number(product.stock) || 0;
+    if (!product || !product.id) {
+      console.error("Invalid product:", product);
+      return false;
+    }
+
+    // If stock exists, use it.
+    // Otherwise assume the product is available.
+    const stock =
+      product.stock != null
+        ? Number(product.stock)
+        : product.inStock === false
+          ? 0
+          : Infinity;
 
     if (stock <= 0) {
+      console.warn("Product is out of stock:", product.name);
       return false;
     }
 
     setItems((prev) => {
-      const existing = prev.find((it) => it.id === product.id);
+      const existing = prev.find((item) => item.id === product.id);
 
       if (existing) {
         const newQty = Math.min(existing.qty + qty, stock);
 
-        return prev.map((it) =>
-          it.id === product.id ? { ...it, qty: newQty, stock } : it,
+        return prev.map((item) =>
+          item.id === product.id
+            ? {
+                ...item,
+                qty: newQty,
+                stock,
+              }
+            : item,
         );
       }
 
@@ -56,30 +76,34 @@ export const CartProvider = ({ children }) => {
   const updateQty = (id, qty) => {
     setItems((prev) =>
       prev
-        .map((it) => {
-          if (it.id !== id) return it;
+        .map((item) => {
+          if (item.id !== id) return item;
 
-          const stock = Number(it.stock) || 0;
+          const stock = item.stock != null ? Number(item.stock) : Infinity;
+
           const newQty = Math.min(Math.max(qty, 0), stock);
 
           return {
-            ...it,
+            ...item,
             qty: newQty,
           };
         })
-        .filter((it) => it.qty > 0),
+        .filter((item) => item.qty > 0),
     );
   };
 
   const removeFromCart = (id) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    setItems([]);
+  };
 
-  const cartCount = items.reduce((sum, it) => sum + Number(it.qty), 0);
+  const cartCount = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+
   const cartTotal = items.reduce(
-    (sum, it) => sum + Number(it.qty) * Number(it.price || 0),
+    (sum, item) => sum + Number(item.qty || 0) * Number(item.price || 0),
     0,
   );
 
@@ -99,4 +123,5 @@ export const CartProvider = ({ children }) => {
     </CartContext.Provider>
   );
 };
+
 export default CartContext;

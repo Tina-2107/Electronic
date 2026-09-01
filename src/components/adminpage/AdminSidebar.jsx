@@ -63,14 +63,21 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-            fixed inset-y-0 left-0 z-50
-            w-64 lg:w-20 xl:w-64
-            ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-            transition-all duration-300 ease-in-out
-          `}
+                    fixed lg:sticky
+                    top-0 left-0
+                    z-50
+                    w-64
+                    h-screen
+                    flex flex-col flex-shrink-0
+                    bg-gradient-to-b from-gray-950 via-gray-900 to-gray-800
+                    border-r border-gray-800
+                    shadow-2xl
+                    transform transition-transform duration-300 ease-in-out
+                    ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+                        `}
       >
         {/* Logo/Header */}
-        <div className="p-6 border-b border-gray-800 flex items-center space-x-3">
+        <div className="h-20 px-5 border-b border-gray-800 flex items-center gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
             <img
               src={Logo}
@@ -78,8 +85,8 @@ const AdminSidebar = ({ isOpen, onClose }) => {
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="flex-1 min-w-0 xl:block hidden">
-            <h2 className="text-xl font-bold text-white truncate">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold text-white truncate">
               Admin Panel
             </h2>
             <p className="text-xs text-gray-400">D-Light Store</p>
@@ -87,38 +94,38 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Navigation Menu */}
-        <nav className="p-4 space-y-2 mt-6">
+        <nav className="px-4 py-6 space-y-2">
           {adminMenu.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
               className={({ isActive }) => `
-                flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group hover:bg-black/60
-                ${
-                  isActive
-                    ? "bg-yellow-400/20 text-blue-500 border-2 border-yellow-400/40 shadow-lg shadow-yellow-400/20"
-                    : "text-white hover:text-white hover:bg-gray-800/60"
-                }
-              `}
+                      flex items-center gap-3 px-4 py-3 rounded-xl
+                      transition-all duration-200
+                      group
+                      ${
+                        isActive
+                          ? "bg-yellow-400 text-gray-900 shadow-lg shadow-yellow-400/20"
+                          : "text-gray-300 hover:text-white hover:bg-gray-800"
+                      }
+                    `}
               onClick={() => isOpen && onClose()}
             >
               <item.icon className="w-6 h-6 flex-shrink-0" />
-              <span className="font-semibold min-w-0 truncate xl:block hidden">
-                {item.name}
-              </span>
+              <span className="font-medium truncate">{item.name}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Bottom Section - Profile & Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-800 space-y-3">
-          <div className="flex items-center space-x-3 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition">
+        <div className="mt-auto p-4 border-t border-gray-800 space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-800 hover:bg-gray-700 transition">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
               <span className="text-white font-semibold text-sm">
                 {user?.displayName?.[0]?.toUpperCase() || "A"}
               </span>
             </div>
-            <div className="flex-1 min-w-0 xl:block hidden">
+            <div className="flex-1 min-w-0 ">
               <p className="font-semibold text-white text-sm truncate">
                 {user?.displayName || user?.email?.split("@")[0] || "Admin"}
               </p>

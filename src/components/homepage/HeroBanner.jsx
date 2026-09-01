@@ -1,22 +1,23 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
+const SLIDES = [
+  {
+    title: "Best Deals on Electrical Products",
+    subtitle: "Up to 70% OFF on MCBs, Fans & Lighting",
+    cta: "Shop Deals Now",
+    badge: "Today's Best Deals",
+  },
+  {
+    title: "Premium Havells Collection",
+    subtitle: "Genuine Products with Fast Delivery",
+    cta: "Explore Havells",
+    badge: "Featured Products",
+  },
+];
 const HeroBanner = () => {
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  const slides = [
-    {
-      title: "Best Deals on Electrical Products",
-      subtitle: "Up to 70% OFF on MCBs, Fans & Lighting",
-      cta: "Shop Deals Now",
-      badge: "Today's Best Deals",
-    },
-    {
-      title: "Premium Havells Collection",
-      subtitle: "Genuine Products with Fast Delivery",
-      cta: "Explore Havells",
-      badge: "Featured Products",
-    },
-  ];
 
   const OFFERS = [
     {
@@ -36,22 +37,22 @@ const HeroBanner = () => {
       tilt: "-rotate-2",
     },
     {
-      name: "Havells LED Panel",
-      price: 680,
-      oldPrice: 1182,
-      img: new URL("../../assets/images/HavelLED.jpeg", import.meta.url).href,
-      gradient: "from-blue-400 to-indigo-400",
-      tilt: "-rotate-2",
+      name: "Havells Fan",
+      price: 2499,
+      oldPrice: 3499,
+      img: new URL("../../assets/images/fan.jpeg", import.meta.url).href,
+      gradient: "from-purple-400 to-pink-400",
+      tilt: "hover:-rotate-1",
     },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [slides.length]); // add slides.length as dependency
+  }, []); // add slides.length as dependency
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-r from-gray-900 via-blue-900/20 to-gray-900 min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]">
@@ -73,15 +74,15 @@ const HeroBanner = () => {
                   clipRule="evenodd"
                 />
               </svg>
-              {slides[currentSlide].badge} [attached_file:1]
+              {SLIDES[currentSlide].badge}
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent leading-tight mb-4 sm:mb-6">
-              {slides[currentSlide].title}
+              {SLIDES[currentSlide].title}
             </h1>
 
             <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 sm:mb-10 leading-relaxed max-w-lg mx-auto lg:mx-0">
-              {slides[currentSlide].subtitle}
+              {SLIDES[currentSlide].subtitle}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8 sm:mb-12">
@@ -89,7 +90,7 @@ const HeroBanner = () => {
                 href="#deals"
                 className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-semibold text-base sm:text-lg rounded-xl shadow-2xl hover:shadow-yellow-500/25 transform hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto backdrop-blur-sm border border-yellow-400/20"
               >
-                {slides[currentSlide].cta}
+                {SLIDES[currentSlide].cta}
                 <svg
                   className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform flex-shrink-0"
                   fill="none"
@@ -104,12 +105,12 @@ const HeroBanner = () => {
                   />
                 </svg>
               </a>
-              <a
-                href="#featured"
+              <button
+                onClick={() => navigate("/products")}
                 className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-gray-600/50 hover:border-yellow-400/50 bg-gray-900/50 backdrop-blur-sm text-white font-semibold text-base sm:text-lg rounded-xl hover:bg-gray-800/50 transition-all duration-300 w-full sm:w-auto"
               >
                 View All Products
-              </a>
+              </button>
             </div>
           </div>
 

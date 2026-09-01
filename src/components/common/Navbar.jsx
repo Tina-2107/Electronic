@@ -35,7 +35,7 @@ const Navbar = () => {
       current: false,
     }, // Categories active ONLY on home
     { name: "Best Deals", href: "#deals", current: false }, // Never active (hash links)
-    { name: "Featured Products", href: "#featured", current: false }, // Never active (hash links)
+    { name: "Products", href: "/products", current: false }, // Never active (hash links)
     { name: "Contact", href: "#contact", current: false }, // Never active (hash links)
   ];
 
