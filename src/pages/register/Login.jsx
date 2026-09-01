@@ -1,19 +1,23 @@
 import Logo from "../../assets/images/LOGO.png";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { Link } from "react-router-dom";
+import { useState } from "react";
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { auth } from "../../firebase/config";
-import { useAuth } from "../../context/AuthContext";
+//import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  /*  const navigate = useNavigate();
   // Login.jsx - FIXED useEffect
   // Login.jsx - CRITICAL FIX
   const { user, loading: authLoading } = useAuth(); // ✅ Get LOADING state
+
 
   useEffect(() => {
     console.log("🔍 Login useEffect:", {
@@ -39,12 +43,39 @@ const Login = () => {
       navigate("/", { replace: true });
     }
   }, [user, authLoading, navigate]); // ✅ Include authLoading dependency
+*/
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+  const handleForgotPassword = async () => {
+    if (!form.email) {
+      setError("Please enter your email address first.");
+      return;
+    }
 
+    try {
+      setError("");
+      await sendPasswordResetEmail(auth, form.email);
+
+      alert(
+        "Password reset email sent. Please check your inbox and spam folder.",
+      );
+    } catch (err) {
+      console.error("Password reset error:", err);
+
+      if (err.code === "auth/user-not-found") {
+        setError("No account found with this email.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Please enter a valid email address.");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Too many attempts. Please try again later.");
+      } else {
+        setError("Unable to send password reset email. Please try again.");
+      }
+    }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -161,6 +192,7 @@ const Login = () => {
                 </label>
                 <button
                   type="button"
+                  onClick={handleForgotPassword}
                   className="text-[11px] sm:text-xs font-medium text-yellow-300 hover:text-yellow-200"
                 >
                   Forgot password?

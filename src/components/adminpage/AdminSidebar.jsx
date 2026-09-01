@@ -1,42 +1,55 @@
 // components/admin/AdminSidebar.jsx
-//import { useState } from "react";
 import Logo from "../../assets/images/LOGO.png";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
+  ShoppingBagIcon,
+  ArchiveBoxIcon,
   Bars3Icon,
   ChartBarIcon,
-  ShoppingBagIcon,
   CreditCardIcon,
-  UsersIcon,
   PlusIcon,
-  Cog8ToothIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 
 const AdminSidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
-
+  const navigate = useNavigate();
   const adminMenu = [
     {
       name: "Dashboard",
       icon: ChartBarIcon,
       path: "/admin/dashboard",
-      exact: true,
     },
-    { name: "Manage Products", icon: ShoppingBagIcon, path: "/admin/products" },
     {
-      name: "Products",
+      name: "Manage Products",
+      icon: ShoppingBagIcon,
+      path: "/admin/products",
+    },
+    {
+      name: "Add Product",
       icon: PlusIcon,
       path: "/admin/add-product",
-      sub: true,
     },
-    { name: "Manage Stock", icon: ShoppingBagIcon, path: "/admin/stock" },
-    { name: "Orders", icon: CreditCardIcon, path: "/admin/orders" },
-    { name: "Customers", icon: UsersIcon, path: "/admin/customers" },
-    { name: "Settings", icon: Cog8ToothIcon, path: "/admin/settings" },
+    {
+      name: "Manage Stock",
+      icon: ArchiveBoxIcon,
+      path: "/admin/stock",
+    },
+    {
+      name: "Orders",
+      icon: CreditCardIcon,
+      path: "/admin/orders",
+    },
   ];
-
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   return (
     <>
       {/* Mobile Overlay */}
@@ -50,16 +63,20 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-        fixed lg:static z-50 top-0 left-0 h-full w-64 lg:w-20 xl:w-64 bg-gradient-to-b from-gray-900 to-gray-800 
-        shadow-2xl transform transition-all duration-300 ease-in-out
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
-        ${isOpen ? "w-64" : "w-20"} xl:w-64
-      `}
+            fixed inset-y-0 left-0 z-50
+            w-64 lg:w-20 xl:w-64
+            ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+            transition-all duration-300 ease-in-out
+          `}
       >
         {/* Logo/Header */}
         <div className="p-6 border-b border-gray-800 flex items-center space-x-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-            <img src={Logo} alt="Dlight Logo" />
+            <img
+              src={Logo}
+              alt="Dlight Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="flex-1 min-w-0 xl:block hidden">
             <h2 className="text-xl font-bold text-white truncate">
@@ -80,7 +97,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                 ${
                   isActive
                     ? "bg-yellow-400/20 text-blue-500 border-2 border-yellow-400/40 shadow-lg shadow-yellow-400/20"
-                    : "text-black hover:text-white hover:bg-gray-800/60"
+                    : "text-white hover:text-white hover:bg-gray-800/60"
                 }
               `}
               onClick={() => isOpen && onClose()}
@@ -98,7 +115,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
           <div className="flex items-center space-x-3 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
               <span className="text-white font-semibold text-sm">
-                {user?.displayName?.[0] || "A"}
+                {user?.displayName?.[0]?.toUpperCase() || "A"}
               </span>
             </div>
             <div className="flex-1 min-w-0 xl:block hidden">
@@ -110,9 +127,10 @@ const AdminSidebar = ({ isOpen, onClose }) => {
           </div>
 
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center space-x-3 p-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition font-semibold"
           >
+            <ArrowRightOnRectangleIcon className="w-5 h-5" />
             <span className="xl:block hidden">Logout</span>
           </button>
         </div>

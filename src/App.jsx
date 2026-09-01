@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { WishlistProvider } from "./context/WishlistContext";
+import { useAuth } from "./context/AuthContext";
 
 // USER PAGES
 import Home from "./pages/Home";
@@ -30,30 +31,54 @@ import AdminOrders from "./pages/admin/AdminOrders";
 
 // COMMON COMPONENTS
 import Unauthorized from "./pages/Unauthorized";
-import Navbar from "./components/common/Navbar";
-import Footer from "./components/common/Footer";
+import UserLayout from "./components/common/UserLayout";
 
 function App() {
+  const { user } = useAuth();
+
   return (
     <WishlistProvider>
       <Router>
-        {/* Navbar on all non-admin pages */}
-
         <Routes>
-          {/* USER ROUTES */}
-          <Route path="/" element={<Home />} />
+          {/* PUBLIC ROUTES */}
+          <Route element={<UserLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route
+              path="/products"
+              element={<AllProducts categoriesEnabled={true} />}
+            />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/wishlist" element={<Wishlist />} />
+            <Route
+              path="/checkout"
+              element={user ? <Checkout /> : <Navigate to="/login" replace />}
+            />
+            <Route path="/signup" element={<Signup />} />
+            <Route
+              path="/orders"
+              element={user ? <Orders /> : <Navigate to="/login" replace />}
+            />
+          </Route>
+          {/* LOGIN ROUTE */}
           <Route
-            path="/products"
-            element={<AllProducts categoriesEnabled={true} />}
+            path="/login"
+            element={
+              !user ? (
+                <Login />
+              ) : user.role === "admin" ? (
+                <Navigate to="/admin/dashboard" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/orders" element={<Orders />} />
-          {/* AUTH */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+
+          {/* PROTECTED USER ROUTE */}
+          <Route
+            path="/orders"
+            element={user ? <Orders /> : <Navigate to="/login" replace />}
+          />
 
           {/* ADMIN ROUTES */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -65,12 +90,10 @@ function App() {
             <Route path="stock" element={<ManageStock />} />
             <Route path="orders" element={<AdminOrders />} />
           </Route>
-          {/* NO PAGE */}
-          <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route path="/*" element={<NoPage />} />
-        </Routes>
 
-        {/* Footer on all non-admin pages */}
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="*" element={<NoPage />} />
+        </Routes>
       </Router>
     </WishlistProvider>
   );

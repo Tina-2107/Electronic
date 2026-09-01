@@ -1,8 +1,9 @@
 // components/admin/AdminNavbar.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebase/config";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import AdminSidebar from "./AdminSidebar";
 import Logo from "../../assets/images/LOGO.png";
 import {
   Bars3Icon,
@@ -15,26 +16,122 @@ import {
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 
-const AdminNavbar = () => {
+const AdminNavbar = ({ sidebarOpen, toggleSidebar }) => {
+  const [notifications, setNotifications] = useState([]);
+  const hasUnread = notifications.some((n) => !n.read);
+  const [showNotifications, setShowNotifications] = useState(false); // controls popup
+
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Listen to products and orders
+  useEffect(() => {
+    const unsubscribeProducts = onSnapshot(
+      collection(db, "products"),
+      (snapshot) => {
+        const newNotifications = [];
+
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          const stock = Number(data.stock) || 0;
+
+          if (stock < 5) {
+            newNotifications.push({
+              id: `low-stock-${doc.id}`,
+              type: "LOW_STOCK",
+              message: `${data.name} has low stock (${stock}).`,
+              createdAt: new Date(),
+              read: false,
+            });
+          }
+        });
+
+        setNotifications((prev) => {
+          const merged = [...prev, ...newNotifications];
+          return merged.filter(
+            (n, i) => merged.findIndex((m) => m.id === n.id) === i,
+          );
+        });
+      },
+    );
+
+    const unsubscribeOrders = onSnapshot(
+      collection(db, "orders"),
+      (snapshot) => {
+        const newNotifications = [];
+
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          const status = data.status;
+          const id = `order-${doc.id}`;
+
+          if (status === "placed") {
+            newNotifications.push({
+              id,
+              type: "NEW_ORDER",
+              message: `New order placed (#${doc.id}).`,
+              createdAt: new Date(),
+              read: false,
+            });
+          } else if (status === "cancelled") {
+            newNotifications.push({
+              id,
+              type: "ORDER_CANCELLED",
+              message: `Order #${doc.id} was cancelled.`,
+              createdAt: new Date(),
+              read: false,
+            });
+          }
+        });
+
+        setNotifications((prev) => {
+          const merged = [...prev, ...newNotifications];
+          return merged.filter(
+            (n, i) => merged.findIndex((m) => m.id === n.id) === i,
+          );
+        });
+      },
+    );
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeOrders();
+    };
+  }, []);
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setShowNotifications(false);
+  };
+
+  const clearAll = () => {
+    setNotifications([]);
+    setShowNotifications(false);
+  };
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
-    <header className="bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-200 sticky top-0 z-40">
+    <header
+      className={`
+        bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-200 sticky top-0 z-40
+        ${sidebarOpen ? "pr-64" : ""}
+      `}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Left: Logo + Sidebar Toggle */}
           <div className="flex items-center space-x-4">
             {/* Mobile Sidebar Toggle */}
             <button
-              onClick={() => setSidebarOpen(true)}
+              onClick={toggleSidebar}
               className="p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 lg:hidden"
             >
               <Bars3Icon className="h-6 w-6" />
@@ -42,7 +139,7 @@ const AdminNavbar = () => {
 
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-400 via-orange-400 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg p-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-400 via-orange-400 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg ">
                 <img
                   src={Logo}
                   alt="D-Light Admin"
@@ -78,13 +175,71 @@ const AdminNavbar = () => {
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Notifications */}
             <button
+              onClick={() => setShowNotifications((prev) => !prev)}
               className="relative p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200 group"
               title="Notifications"
             >
               <BellIcon className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 border-2 border-white rounded-full animate-pulse" />
+              {hasUnread && (
+                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 border-2 border-white rounded-full" />
+              )}
             </button>
 
+            {/* Notification popup */}
+            {showNotifications && (
+              <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Notifications
+                  </h3>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      Mark all read
+                    </button>
+                    <button
+                      onClick={clearAll}
+                      className="text-xs text-red-600 hover:text-red-800"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {notifications.length === 0 ? (
+                    <p className="p-4 text-sm text-gray-500">
+                      No notifications
+                    </p>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`p-3 border-l-4 ${
+                          n.read
+                            ? "border-transparent"
+                            : "border-blue-500 bg-blue-50"
+                        } hover:bg-gray-50`}
+                      >
+                        <p
+                          className={`text-sm ${
+                            n.read
+                              ? "text-gray-700"
+                              : "text-gray-900 font-medium"
+                          }`}
+                        >
+                          {n.message}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {n.createdAt.toLocaleTimeString("en-IN")}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
             {/* User Profile Dropdown */}
             <Menu as="div" className="relative">
               <Menu.Button className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-100 transition-all duration-200 group">
@@ -189,12 +344,6 @@ const AdminNavbar = () => {
           </div>
         </div>
       </div>
-
-      {/* Mobile Sidebar */}
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
     </header>
   );
 };

@@ -1,6 +1,9 @@
 // components/modals/CheckoutModal.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState } from "react";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+import { db } from "../../firebase/config";
 import { useCart } from "../../context/useCart";
 import {
   XMarkIcon,
@@ -8,10 +11,15 @@ import {
   MapPinIcon,
   TruckIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "../../context/AuthContext";
 
 const CheckoutModal = ({ isOpen, onClose }) => {
   const { items, cartTotal, clearCart } = useCart();
+  const { user } = useAuth();
   const [step, setStep] = useState(1); // 1: Address, 2: Payment, 3: Review
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -31,20 +39,98 @@ const CheckoutModal = ({ isOpen, onClose }) => {
   };
 
   const handleNextStep = () => {
+    setOrderError("");
+
     if (step === 1) {
-      // Validate address form
+      if (
+        !formData.name.trim() ||
+        !formData.email.trim() ||
+        !formData.phone.trim() ||
+        !formData.address.trim() ||
+        !formData.city.trim() ||
+        !formData.pincode.trim()
+      ) {
+        setOrderError("Please fill in all shipping details.");
+        return;
+      }
+
+      if (!/^\d{10}$/.test(formData.phone)) {
+        setOrderError("Please enter a valid 10-digit phone number.");
+        return;
+      }
+
+      if (!/^\d{6}$/.test(formData.pincode)) {
+        setOrderError("Please enter a valid 6-digit PIN code.");
+        return;
+      }
+
       setStep(2);
     } else if (step === 2) {
       setStep(3);
     }
   };
 
-  const handlePlaceOrder = () => {
-    // Process order (API call)
-    console.log("Order placed:", { items, total: cartTotal, formData });
-    clearCart();
-    onClose();
-    // Navigate to order success page or show success modal
+  const handlePlaceOrder = async () => {
+    if (placingOrder) return;
+
+    if (!user) {
+      setOrderError("Please login before placing an order.");
+      return;
+    }
+
+    if (items.length === 0) {
+      setOrderError("Your cart is empty.");
+      return;
+    }
+
+    try {
+      setPlacingOrder(true);
+      setOrderError("");
+
+      const orderData = {
+        userId: user.uid,
+
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+
+        shippingAddress: {
+          address: formData.address,
+          city: formData.city,
+          pincode: formData.pincode,
+        },
+
+        items: items.map((item) => ({
+          productId: item.id,
+          name: item.name,
+          brand: item.brand || "",
+          price: Number(item.price),
+          quantity: Number(item.qty),
+          image: item.image || "",
+        })),
+
+        total: Number(cartTotal),
+
+        paymentMethod: formData.paymentMethod,
+        paymentStatus: "pending",
+        orderStatus: "pending",
+
+        createdAt: serverTimestamp(),
+      };
+
+      const orderRef = await addDoc(collection(db, "orders"), orderData);
+
+      console.log("Order created:", orderRef.id);
+
+      clearCart();
+      setStep(1);
+      onClose();
+    } catch (error) {
+      console.error("Error placing order:", error);
+      setOrderError("Unable to place your order. Please try again.");
+    } finally {
+      setPlacingOrder(false);
+    }
   };
 
   return (
@@ -298,7 +384,10 @@ const CheckoutModal = ({ isOpen, onClose }) => {
                             <p className="text-sm text-gray-300">
                               Items:{" "}
                               <span className="font-semibold text-white">
-                                {items.length}
+                                {items.reduce(
+                                  (total, item) => total + Number(item.qty),
+                                  0,
+                                )}
                               </span>
                             </p>
                             <p className="text-sm text-gray-300">
@@ -361,7 +450,11 @@ const CheckoutModal = ({ isOpen, onClose }) => {
                           )}
                         </div>
                       </div>
-
+                      {orderError && (
+                        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                          {orderError}
+                        </div>
+                      )}
                       {/* Action Buttons */}
                       <div className="space-y-3 border-t border-gray-700/50 pt-4">
                         {step < 3 ? (
@@ -382,6 +475,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
                         ) : (
                           <button
                             onClick={handlePlaceOrder}
+                            disabled={placingOrder}
                             className="w-full py-4 px-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:from-emerald-400 hover:shadow-xl transition-all text-lg"
                           >
                             Place Order

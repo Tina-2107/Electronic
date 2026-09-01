@@ -2,8 +2,9 @@ import Logo from "../../assets/images/LOGO.png";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase/config";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 
 const SignupPage = () => {
@@ -14,7 +15,6 @@ const SignupPage = () => {
     password: "",
     confirmPassword: "",
     newsletter: true,
-    role: "customer",
   });
 
   const [error, setError] = useState("");
@@ -32,10 +32,15 @@ const SignupPage = () => {
 
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
+
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    if (name === "confirmPassword" || name === "password") {
+      setPasswordError("");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -50,8 +55,31 @@ const SignupPage = () => {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, form.email, form.password);
-      // Additional user profile updates and navigation
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password,
+      );
+
+      const firebaseUser = userCredential.user;
+
+      // Save user's display name in Firebase Authentication
+      await updateProfile(firebaseUser, {
+        displayName: form.fullName,
+      });
+
+      // Create user profile in Firestore
+      await setDoc(doc(db, "users", firebaseUser.uid), {
+        uid: firebaseUser.uid,
+        email: form.email,
+        displayName: form.fullName,
+        phone: form.phone,
+        newsletter: form.newsletter,
+        role: "user",
+        createdAt: serverTimestamp(),
+      });
+
+      navigate("/", { replace: true });
     } catch (err) {
       if (err.code === "auth/email-already-in-use") {
         setError("This email is already registered. Please log in instead.");

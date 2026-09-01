@@ -8,7 +8,6 @@ import {
   query,
   where,
   orderBy,
-  limit,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { Link } from "react-router-dom";
@@ -16,8 +15,6 @@ import {
   ShoppingBagIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   PencilIcon,
   TrashIcon,
   PlusIcon,
@@ -28,9 +25,6 @@ const ManageProducts = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalProducts] = useState(0);
-  const PRODUCTS_PER_PAGE = 10;
 
   // Categories for filter
   const categories = [
@@ -40,22 +34,30 @@ const ManageProducts = () => {
     "Switches",
     "Wires",
     "Appliances",
+    "Decorative Lighting",
+    "Switch Gear",
+    "Relays",
   ];
 
+  // Fetch products
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      let q = query(
-        collection(db, "products"),
-        orderBy("createdAt", "desc"),
-        limit(PRODUCTS_PER_PAGE)
-      );
 
-      if (categoryFilter !== "all") {
-        q = query(q, where("category", "==", categoryFilter));
+      let q;
+
+      if (categoryFilter === "all") {
+        q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+      } else {
+        q = query(
+          collection(db, "products"),
+          where("category", "==", categoryFilter),
+          orderBy("createdAt", "desc"),
+        );
       }
 
       const querySnapshot = await getDocs(q);
+
       const productsList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -73,18 +75,27 @@ const ManageProducts = () => {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Delete product
   const deleteProduct = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
         await deleteDoc(doc(db, "products", id));
-        fetchProducts();
+        await fetchProducts(); // refresh list
       } catch (error) {
         console.error("Error deleting product:", error);
       }
     }
   };
 
-  const filteredProductsCount = products.length;
+  // Search products
+  const displayedProducts = products.filter((p) => {
+    const search = searchTerm.trim().toLowerCase();
+
+    const name = String(p.name || "").toLowerCase();
+    const brand = String(p.brand || "").toLowerCase();
+
+    return !search || name.includes(search) || brand.includes(search);
+  });
 
   return (
     <div className="space-y-6">
@@ -92,7 +103,9 @@ const ManageProducts = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Manage Products</h1>
-          <p className="text-gray-600 mt-1">{totalProducts} products total</p>
+          <p className="text-gray-600 mt-1">
+            {displayedProducts.length} products shown
+          </p>
         </div>
         <Link
           to="/admin/add-product"
@@ -142,24 +155,28 @@ const ManageProducts = () => {
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
-              Products ({filteredProductsCount})
+              Products ({displayedProducts.length})
             </h3>
           </div>
         </div>
-
+        {/* Loading */}
         {loading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="mt-2 text-gray-500">Loading products...</p>
           </div>
-        ) : products.length === 0 ? (
+        ) : displayedProducts.length === 0 ? (
+          /* Empty State */
           <div className="p-12 text-center">
             <ShoppingBagIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No products found
             </h3>
             <p className="text-gray-500">
-              Try adjusting your search or filters
+              {searchTerm || categoryFilter !== "all"
+                ? "Try adjusting your search or filters"
+                : "No products have been added yet"}
             </p>
           </div>
         ) : (
@@ -187,7 +204,7 @@ const ManageProducts = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {products.map((product) => (
+                  {displayedProducts.map((product) => (
                     <tr
                       key={product.id}
                       className="hover:bg-gray-50 transition-colors"
@@ -196,8 +213,8 @@ const ManageProducts = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-4">
                           <img
-                            src={product.image}
-                            alt={product.name}
+                            src={product.image || "/placeholder-image.jpg"}
+                            alt={product.name || "Product"}
                             className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                             onError={(e) => {
                               e.target.src = "/placeholder-image.jpg";
@@ -205,10 +222,10 @@ const ManageProducts = () => {
                           />
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-semibold text-gray-900 truncate">
-                              {product.name}
+                              {product.name || "Unnamed Product"}
                             </div>
                             <div className="text-xs text-gray-500 truncate">
-                              {product.brand}
+                              {product.brand || "No brand"}
                             </div>
                           </div>
                         </div>
@@ -217,38 +234,41 @@ const ManageProducts = () => {
                       {/* Price */}
                       <td className="px-6 py-4 hidden md:table-cell">
                         <div className="text-sm font-semibold text-gray-900">
-                          ₹{product.price}
+                          ₹{product.price ?? 0}
                         </div>
-                        <div className="text-xs text-gray-500 line-through">
-                          ₹{product.mrp}
-                        </div>
+                        {product.mrp && (
+                          <div className="text-xs text-gray-500 line-through">
+                            ₹{product.mrp}
+                          </div>
+                        )}
                       </td>
 
                       {/* Stock */}
                       <td className="px-6 py-4 hidden lg:table-cell">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            product.stock > 10
+                            Number(product.stock) > 10
                               ? "bg-green-100 text-green-800"
-                              : product.stock > 0
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
+                              : Number(product.stock) > 0
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {product.stock}
+                          {product.stock ?? 0}
                         </span>
                       </td>
 
                       {/* Category */}
                       <td className="px-6 py-4 hidden xl:table-cell">
                         <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                          {product.category}
+                          {product.category || "Uncategorized"}
                         </span>
                       </td>
 
                       {/* Actions */}
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
+                          {/* Edit */}
                           <Link
                             to={`/admin/edit-product/${product.id}`}
                             className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
@@ -256,6 +276,7 @@ const ManageProducts = () => {
                           >
                             <PencilIcon className="w-5 h-5" />
                           </Link>
+                          {/* Delete */}
                           <button
                             onClick={() => deleteProduct(product.id)}
                             className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition"
@@ -269,47 +290,6 @@ const ManageProducts = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700">
-                  Showing{" "}
-                  <span className="font-semibold">
-                    {(currentPage - 1) * PRODUCTS_PER_PAGE + 1}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-semibold">
-                    {Math.min(
-                      currentPage * PRODUCTS_PER_PAGE,
-                      filteredProductsCount
-                    )}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-semibold">{filteredProductsCount}</span>{" "}
-                  results
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => p - 1)}
-                    className="p-2 text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 transition"
-                  >
-                    <ChevronLeftIcon className="w-5 h-5" />
-                  </button>
-                  <span className="px-3 py-2 text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded-lg">
-                    Page {currentPage}
-                  </span>
-                  <button
-                    disabled={products.length < PRODUCTS_PER_PAGE}
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                    className="p-2 text-gray-500 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 transition"
-                  >
-                    <ChevronRightIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
             </div>
           </>
         )}

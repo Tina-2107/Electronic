@@ -14,6 +14,7 @@ const AddProduct = () => {
     mrp: "",
     stock: "",
     image: "",
+
     badge: "",
     description: "",
   });
@@ -29,7 +30,7 @@ const AddProduct = () => {
     }));
 
     // ✅ Image preview for URL input
-    if (name === "image" && value) {
+    if (name === "image") {
       setImagePreview(value);
     }
   };
@@ -38,16 +39,65 @@ const AddProduct = () => {
     e.preventDefault();
     setLoading(true);
 
+    // ✅ Basic client‑side validation
+    if (!form.name.trim()) {
+      alert("Failed to add product. Please try again.");
+      setLoading(false);
+      return;
+    }
+    if (!form.brand.trim()) {
+      alert("Brand is required.");
+      setLoading(false);
+      return;
+    }
+    if (!form.category) {
+      alert("Please select a category.");
+      setLoading(false);
+      return;
+    }
+    if (!form.price || isNaN(Number(form.price)) || Number(form.price) < 0) {
+      alert("Valid price is required.");
+      setLoading(false);
+      return;
+    }
+    if (!form.mrp || isNaN(Number(form.mrp)) || Number(form.mrp) < 0) {
+      alert("Valid MRP is required.");
+      setLoading(false);
+      return;
+    }
+    if (Number(form.price) > Number(form.mrp)) {
+      alert("Selling price cannot be greater than MRP.");
+      setLoading(false);
+      return;
+    }
+    const stock = Number(form.stock);
+
+    if (form.stock === "" || !Number.isInteger(stock) || stock < 0) {
+      alert("Stock must be a whole number greater than or equal to 0.");
+      setLoading(false);
+      return;
+    }
+    if (!form.image.trim()) {
+      alert("Image URL is required.");
+      setLoading(false);
+      return;
+    }
+
     try {
       await addDoc(collection(db, "products"), {
-        ...form,
+        name: form.name.trim(),
+        brand: form.brand.trim(),
+        category: form.category,
         price: Number(form.price),
         mrp: Number(form.mrp),
         stock: Number(form.stock),
+        image: form.image.trim(),
+        badge: form.badge.trim(),
+        description: form.description.trim(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      navigate("/admin/manage-products");
+      navigate("/admin/products");
     } catch (error) {
       console.error("Error adding product:", error);
       alert("Failed to add product. Please try again.");
@@ -65,7 +115,7 @@ const AddProduct = () => {
             Add New Product
           </h1>
           <button
-            onClick={() => navigate("/admin/manage-products")}
+            onClick={() => navigate("/admin/products")}
             className="sm:w-auto w-full px-6 py-2.5 bg-gray-500 text-white rounded-xl hover:bg-gray-600 font-semibold transition whitespace-nowrap"
           >
             ← Back to Products
@@ -76,7 +126,7 @@ const AddProduct = () => {
           {/* Image Upload Section */}
           <div className="border border-dashed border-gray-300 rounded-2xl p-6 sm:p-8 hover:border-gray-400 transition-colors">
             <label className="block text-sm font-semibold text-gray-900 mb-4">
-              Product Image
+              Product Image *
             </label>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
               {/* Image Preview */}
@@ -85,6 +135,7 @@ const AddProduct = () => {
                   <img
                     src={imagePreview}
                     alt="Preview"
+                    onError={() => setImagePreview("")}
                     className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-2xl object-cover shadow-lg border-4 border-gray-100 mx-auto"
                   />
                 ) : (
@@ -258,7 +309,7 @@ const AddProduct = () => {
           <div className="flex flex-col sm:flex-row gap-4 pt-6">
             <button
               type="button"
-              onClick={() => navigate("/admin/manage-products")}
+              onClick={() => navigate("/admin/products")}
               className="flex-1 py-4 px-8 border-2 border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 hover:border-gray-400 font-semibold transition-all shadow-sm hover:shadow-md"
               disabled={loading}
             >

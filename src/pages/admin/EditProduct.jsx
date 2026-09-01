@@ -1,8 +1,9 @@
-// pages/admin/EditProduct.jsx - COMPLETE FORM
+// pages/admin/EditProduct.jsx
 import { useState, useEffect, useCallback } from "react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useParams, useNavigate } from "react-router-dom";
+import placeholderImage from "../../assets/images/placeholder.jpg";
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -18,6 +19,7 @@ const EditProduct = () => {
     description: "",
   });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
   // ✅ Fetch product data
@@ -31,15 +33,15 @@ const EditProduct = () => {
           name: productData.name || "",
           brand: productData.brand || "",
           category: productData.category || "",
-          price: productData.price || "",
-          mrp: productData.mrp || "",
-          stock: productData.stock || "",
+          price: productData.price ?? "",
+          mrp: productData.mrp ?? "",
+          stock: productData.stock ?? "",
           image: productData.image || "",
           badge: productData.badge || "",
           description: productData.description || "",
         });
       } else {
-        navigate("/admin/manage-products");
+        navigate("/admin/products");
       }
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -58,17 +60,78 @@ const EditProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ Basic validation
+    if (!product.name.trim()) {
+      alert("Product name is required.");
+      return;
+    }
+    if (!product.brand.trim()) {
+      alert("Brand is required.");
+      return;
+    }
+    if (!product.category) {
+      alert("Please select a category.");
+      return;
+    }
+    if (
+      product.price === "" ||
+      !Number.isFinite(Number(product.price)) ||
+      Number(product.price) <= 0
+    ) {
+      alert("Valid price is required.");
+      return;
+    }
+    if (
+      !product.mrp ||
+      !Number.isFinite(Number(product.mrp)) ||
+      Number(product.mrp) < 0
+    ) {
+      alert("Valid MRP is required.");
+      return;
+    }
+    if (Number(product.price) > Number(product.mrp)) {
+      alert("Selling price cannot be greater than MRP.");
+      return;
+    }
+    const stock = Number(product.stock);
+
+    if (product.stock === "" || !Number.isInteger(stock) || stock < 0) {
+      alert("Stock must be a whole number greater than or equal to 0.");
+      return;
+    }
+    if (!product.image.trim()) {
+      alert("Image URL is required.");
+      return;
+    }
+
     try {
+      setSaving(true);
+
       const docRef = doc(db, "products", id);
       await updateDoc(docRef, {
-        ...product,
+        name: product.name.trim(),
+        brand: product.brand.trim(),
+        category: product.category,
         price: Number(product.price),
         mrp: Number(product.mrp),
         stock: Number(product.stock),
+        image: product.image.trim(),
+        badge: product.badge.trim(),
+        description: product.description.trim(),
+        updatedAt: serverTimestamp(),
       });
-      navigate("/admin/manage-products");
+      navigate("/admin/products");
     } catch (error) {
       console.error("Error updating product:", error);
+      if (error.code === "not-found") {
+        alert("This product no longer exists.");
+        navigate("/admin/products");
+        return;
+      }
+      alert("Failed to update product. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -90,7 +153,7 @@ const EditProduct = () => {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Edit Product</h1>
           <button
-            onClick={() => navigate("/admin/manage-products")}
+            onClick={() => navigate("/admin/products")}
             className="px-6 py-2.5 bg-gray-500 text-white rounded-xl hover:bg-gray-600 font-semibold transition"
           >
             ← Back to Products
@@ -108,6 +171,9 @@ const EditProduct = () => {
                 src={product.image}
                 alt={product.name}
                 className="w-24 h-24 rounded-xl object-cover border-2 border-gray-200"
+                onError={(e) => {
+                  e.currentTarget.src = placeholderImage;
+                }}
               />
               <input
                 type="url"
@@ -116,6 +182,7 @@ const EditProduct = () => {
                 onChange={handleInputChange}
                 placeholder="https://example.com/image.jpg"
                 className="flex-1 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
               />
             </div>
           </div>
@@ -167,6 +234,9 @@ const EditProduct = () => {
                 <option value="Switches">Switches</option>
                 <option value="Wires">Wires</option>
                 <option value="Appliances">Appliances</option>
+                <option value="Decorative Lighting">Decorative Lighting</option>
+                <option value="Switch Gear">Switch Gear</option>
+                <option value="Relays">Relays</option>
               </select>
             </div>
           </div>
@@ -184,7 +254,7 @@ const EditProduct = () => {
                 onChange={handleInputChange}
                 className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
-                min="0"
+                min="0.01"
                 step="0.01"
               />
             </div>
@@ -217,6 +287,7 @@ const EditProduct = () => {
                 className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
                 min="0"
+                step="1"
               />
             </div>
           </div>
@@ -255,16 +326,17 @@ const EditProduct = () => {
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               type="button"
-              onClick={() => navigate("/admin/manage-products")}
+              onClick={() => navigate("/admin/products")}
               className="flex-1 py-4 px-8 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition"
             >
               Cancel
             </button>
             <button
               type="submit"
+              disabled={saving}
               className="flex-1 py-4 px-8 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all"
             >
-              Update Product
+              {saving ? "Updating..." : "Update Product"}
             </button>
           </div>
         </form>
