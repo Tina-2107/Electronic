@@ -1,244 +1,833 @@
-# D-Light ⚡
+# ⚡ D-Light
 
-D-Light is a fully responsive e-commerce frontend for electrical & electronic products, built with **React 19**, **Vite**, **Tailwind CSS**, and **Firebase**. It includes a customer-facing storefront (home page, product listing/details, cart, wishlist, checkout) and a separate admin panel for managing products, stock, and orders.
+A modern e-commerce web application for browsing and managing electrical and electronic products, built with React, Firebase, Firestore, and Tailwind CSS.
 
-> ⚠️ **Status: Work in progress.** Several features (product detail fetching, admin/storefront data sync, search filtering) are still incomplete — see [Known Issues](#known-issues) below before relying on this in production.
+D-Light provides a customer-facing storefront along with an admin dashboard for product, inventory, and order management.
 
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
-- [Routing Overview](#routing-overview)
-- [State Management](#state-management)
-- [Known Issues](#known-issues)
-- [Roadmap / Suggested Next Steps](#roadmap--suggested-next-steps)
-- [Contributing](#contributing)
+> **Project Status:** Active Development
+> The core e-commerce experience and admin workflows are implemented. Payment gateway integration, automated testing, advanced security rules, and some data architecture improvements are planned.
 
 ---
 
-## Features
+## 🚀 Features
 
-**Storefront**
-- Responsive home page with hero banner, category grid, brand slider, offers, and featured products
-- Product listing with category/brand/search filters (via URL query params)
-- Product details page
-- Cart with quantity controls and totals
+### 🛍️ Customer Storefront
+
+- Responsive e-commerce interface
+- Product browsing and discovery
+- Product categories and brands
+- Product search and filtering
+- Product details
+- Shopping cart
 - Wishlist
-- Multi-step checkout modal (address → payment → review)
-- Email/password authentication (sign up, log in) via Firebase Auth
+- Persistent cart using `localStorage`
+- Persistent wishlist using `localStorage`
+- User registration and login
+- Password reset
+- Checkout workflow
+- Order creation
+- Responsive design for desktop and mobile
 
-**Admin Panel** (`/admin`)
-- Dashboard with basic stats
-- Add / edit / delete products (Firestore-backed)
-- Manage stock (placeholder)
-- Manage orders (placeholder)
-- Role-based access — only users with `role: "admin"` in Firestore can reach `/admin/*`
+### 🔐 Authentication
 
----
+Authentication is implemented using **Firebase Authentication**.
 
-## Tech Stack
+Users can:
 
-| Layer            | Technology                                  |
-|-------------------|----------------------------------------------|
-| Framework          | React 19 + Vite 7                            |
-| Routing            | React Router 7                               |
-| Styling            | Tailwind CSS 3                               |
-| UI Components      | Headless UI, Heroicons, React Icons          |
-| State Management   | React Context (Cart, Wishlist, Auth) + Redux Toolkit (partially wired, see [Known Issues](#known-issues)) |
-| Backend / Data      | Firebase (Auth + Firestore)                  |
-| Deployment          | GitHub Pages (`gh-pages`)                    |
-| Linting             | ESLint 9 (flat config)                        |
+- Create an account
+- Sign in with email and password
+- Sign out
+- Reset their password
+- Maintain a Firestore-backed user profile
 
----
+User profiles contain information such as:
 
-## Project Structure
-
-```
-src/
-├── assets/               # Images, logos, category/product images
-├── components/
-│   ├── adminpage/         # Admin layout, sidebar, navbar
-│   ├── cart/               # Cart-related components (WIP)
-│   ├── common/             # Navbar, Footer, Layout, ProtectedRoute
-│   ├── homepage/           # Hero, categories, brands, offers, safety highlights
-│   ├── modals/              # CheckoutModal
-│   └── products/            # ProductCard, ProductGrid, filters (WIP)
-├── context/                # Cart, Wishlist, Auth context + hooks
-├── data/                   # Static product data (storefront demo data)
-├── firebase/                # Firebase app initialization
-├── pages/
-│   ├── admin/                # AdminDashboard, AddProduct, EditProduct, ManageProducts, ManageStock, AdminOrders
-│   ├── register/              # Login, Signup
-│   └── ...                    # Home, AllProducts, ProductDetails, Cart, Wishlist, Checkout, Orders
-├── redux/                   # Redux Toolkit store + cart slice (currently unused by the UI)
-├── utils/                    # Auth helpers, Firestore seed script
-├── App.jsx                   # Route definitions
-└── main.jsx                  # App entry point / provider tree
+```text
+uid
+email
+displayName
+phone
+newsletter
+role
+createdAt
 ```
 
+The application currently supports:
+
+```text
+user
+admin
+```
+
+roles.
+
 ---
 
-## Getting Started
+## 🛠️ Admin Dashboard
 
-### Prerequisites
-- Node.js `^20.19.0` or `>=22.12.0` (required by Vite 7 / `@vitejs/plugin-react`)
+Authenticated administrators have access to a dedicated dashboard.
+
+### Dashboard
+
+Provides an overview of:
+
+- Total products
+- Total orders
+- Total customers
+- Revenue
+- Recent orders
+- Low-stock products
+
+### Product Management
+
+Admins can:
+
+- Add products
+- Edit products
+- Delete products
+- Search products
+- Filter products by category
+- Update product information
+
+### Inventory Management
+
+Admins can:
+
+- View inventory
+- Search inventory
+- Filter products by stock status
+- Update product stock
+- Identify low-stock products
+
+### Order Management
+
+Admins can:
+
+- View customer orders
+- Search orders
+- Filter orders
+- Update order status
+
+---
+
+## 💳 Checkout
+
+D-Light includes a multi-step checkout experience:
+
+```text
+Cart
+  ↓
+Shipping Information
+  ↓
+Payment Method
+  ↓
+Order Review
+  ↓
+Create Order
+  ↓
+Order Confirmation
+```
+
+The checkout currently supports payment-method selection such as:
+
+- Card
+- UPI
+- Cash on Delivery
+
+### Current limitation
+
+The project currently **does not integrate a real payment gateway**.
+
+The selected payment method is stored with the order, but card/UPI transactions are not processed by a payment provider yet.
+
+A production payment implementation will require a payment gateway and server-side payment verification.
+
+---
+
+# 🏗️ Architecture
+
+D-Light is currently implemented as a React single-page application with Firebase providing authentication and cloud database functionality.
+
+```text
+                         D-LIGHT
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+             ▼                             ▼
+       Customer Storefront            Admin Dashboard
+             │                             │
+      ┌──────┼──────┐              ┌───────┼────────┐
+      │      │      │              │       │        │
+   Products Cart Wishlist       Products Inventory Orders
+      │      │      │              │       │        │
+      └──────┼──────┘              └───────┼────────┘
+             │                             │
+             └──────────────┬──────────────┘
+                            ▼
+                       Firebase
+                    ┌───────┴────────┐
+                    │                │
+                    ▼                ▼
+              Authentication     Firestore
+                                      │
+                         ┌────────────┼────────────┐
+                         │            │            │
+                       users       products       orders
+```
+
+---
+
+# 🔄 Authentication Flow
+
+```text
+User
+ │
+ ▼
+Login / Signup
+ │
+ ▼
+Firebase Authentication
+ │
+ ▼
+Authenticated User
+ │
+ ▼
+AuthProvider
+ │
+ ▼
+users/{uid}
+ │
+ ▼
+Read user profile + role
+ │
+ ├───────────────┐
+ ▼               ▼
+User          Admin
+ │               │
+ ▼               ▼
+Storefront    Admin Dashboard
+```
+
+The application listens for Firebase authentication state changes through `onAuthStateChanged`.
+
+After authentication, the corresponding Firestore user document is retrieved to determine the user's application role.
+
+---
+
+# 🛒 Cart Architecture
+
+The cart is currently managed through React Context.
+
+```text
+Product
+   │
+   ▼
+Add to Cart
+   │
+   ▼
+CartContext
+   │
+   ├── cartItems
+   ├── cartCount
+   ├── cartTotal
+   └── quantity management
+          │
+          ▼
+     localStorage
+```
+
+Cart functionality includes:
+
+- Add product
+- Increase quantity
+- Decrease quantity
+- Remove product
+- Clear cart
+- Calculate total quantity
+- Calculate cart total
+- Stock-aware quantity limits
+
+---
+
+# ❤️ Wishlist Architecture
+
+Wishlist state is managed through React Context and persisted using browser `localStorage`.
+
+```text
+Product
+   │
+   ▼
+Toggle Wishlist
+   │
+   ▼
+WishlistContext
+   │
+   ▼
+localStorage
+```
+
+Users can:
+
+- Add products to wishlist
+- Remove products
+- Check wishlist membership
+- View wishlist count
+
+---
+
+# 📦 Order Flow
+
+When a user completes checkout:
+
+```text
+Authenticated User
+       │
+       ▼
+Checkout
+       │
+       ▼
+Validate Shipping Information
+       │
+       ▼
+Select Payment Method
+       │
+       ▼
+Review Order
+       │
+       ▼
+Create Firestore Order
+       │
+       ▼
+Clear Cart
+       │
+       ▼
+Order Created
+```
+
+An order contains information such as:
+
+```text
+userId
+customerName
+customerEmail
+customerPhone
+shippingAddress
+items
+total
+paymentMethod
+paymentStatus
+orderStatus
+createdAt
+```
+
+---
+
+# 🗄️ Firestore Data Model
+
+## Users
+
+```text
+users/{uid}
+
+{
+  uid,
+  email,
+  displayName,
+  phone,
+  newsletter,
+  role,
+  createdAt
+}
+```
+
+## Products
+
+The admin application uses a Firestore `products` collection.
+
+```text
+products/{productId}
+
+{
+  name,
+  brand,
+  category,
+  price,
+  mrp,
+  stock,
+  image,
+  badge,
+  description,
+  createdAt,
+  updatedAt
+}
+```
+
+## Orders
+
+```text
+orders/{orderId}
+
+{
+  userId,
+  customerName,
+  customerEmail,
+  customerPhone,
+
+  shippingAddress: {
+    address,
+    city,
+    pincode
+  },
+
+  items: [
+    {
+      productId,
+      name,
+      brand,
+      price,
+      quantity,
+      image
+    }
+  ],
+
+  total,
+  paymentMethod,
+  paymentStatus,
+  orderStatus,
+  createdAt
+}
+```
+
+---
+
+# 🧩 Project Structure
+
+```text
+Electronic/
+│
+├── public/
+│
+├── src/
+│   │
+│   ├── assets/
+│   │   └── images/
+│   │       ├── brands/
+│   │       ├── categories/
+│   │       └── prod/
+│   │
+│   ├── components/
+│   │   ├── adminpage/
+│   │   ├── common/
+│   │   ├── homepage/
+│   │   ├── modals/
+│   │   └── products/
+│   │
+│   ├── context/
+│   │   ├── AuthContext.jsx
+│   │   ├── AuthProvider.jsx
+│   │   ├── CartContext.jsx
+│   │   └── WishlistContext.jsx
+│   │
+│   ├── data/
+│   │   └── products.js
+│   │
+│   ├── firebase/
+│   │   └── config.jsx
+│   │
+│   ├── pages/
+│   │   ├── admin/
+│   │   ├── register/
+│   │   ├── AllProducts.jsx
+│   │   ├── Cart.jsx
+│   │   ├── Home.jsx
+│   │   ├── Orders.jsx
+│   │   ├── ProductDetails.jsx
+│   │   └── Wishlist.jsx
+│   │
+│   ├── redux/
+│   │   ├── cartSlice.jsx
+│   │   └── store.jsx
+│   │
+│   ├── utils/
+│   │
+│   ├── App.jsx
+│   ├── App.css
+│   ├── index.css
+│   └── main.jsx
+│
+├── .gitignore
+├── eslint.config.js
+├── index.html
+├── package.json
+├── package-lock.json
+├── postcss.config.js
+└── README.md
+```
+
+---
+
+# 🛣️ Application Routes
+
+## Customer Routes
+
+| Route           | Description       | Access        |
+| --------------- | ----------------- | ------------- |
+| `/`             | Homepage          | Public        |
+| `/products`     | Product catalog   | Public        |
+| `/product/:id`  | Product details   | Public        |
+| `/cart`         | Shopping cart     | Public        |
+| `/wishlist`     | Wishlist          | Public        |
+| `/orders`       | User orders       | Authenticated |
+| `/login`        | Login             | Guest         |
+| `/signup`       | Registration      | Guest         |
+| `/unauthorized` | Unauthorized page | Public        |
+
+## Admin Routes
+
+| Route                     | Description          | Access |
+| ------------------------- | -------------------- | ------ |
+| `/admin/dashboard`        | Admin dashboard      | Admin  |
+| `/admin/products`         | Product management   | Admin  |
+| `/admin/add-product`      | Add product          | Admin  |
+| `/admin/edit-product/:id` | Edit product         | Admin  |
+| `/admin/stock`            | Inventory management | Admin  |
+| `/admin/orders`           | Order management     | Admin  |
+
+---
+
+# 🧰 Technology Stack
+
+| Technology              | Purpose                                  |
+| ----------------------- | ---------------------------------------- |
+| React 19                | Frontend UI                              |
+| Vite                    | Build tool and development server        |
+| React Router            | Client-side routing                      |
+| Tailwind CSS            | Styling                                  |
+| Firebase Authentication | User authentication                      |
+| Cloud Firestore         | Database                                 |
+| React Context           | Authentication, cart, and wishlist state |
+| Redux Toolkit           | Global state management setup            |
+| Headless UI             | Accessible UI primitives                 |
+| Heroicons               | UI icons                                 |
+| React Icons             | Additional icons                         |
+| ESLint                  | Code quality                             |
+| GitHub Pages            | Deployment                               |
+
+---
+
+# ⚙️ Getting Started
+
+## Prerequisites
+
+Make sure you have:
+
+- Node.js
 - npm
-- A Firebase project (Auth + Firestore enabled)
+- Git
+- A Firebase project
 
-### Installation
+---
+
+## 1. Clone the repository
 
 ```bash
-git clone <repo-url>
-cd electronic
+git clone https://github.com/Tina-2107/Electronic.git
+```
+
+```bash
+cd Electronic
+```
+
+---
+
+## 2. Install dependencies
+
+```bash
 npm install
 ```
 
-### Configure Firebase
+---
 
-Update `src/firebase/config.jsx` with your own Firebase project credentials (or, preferably, move these into environment variables — see [Environment Variables](#environment-variables)).
+## 3. Configure Firebase
 
-You'll need a Firestore `products` collection and a `users` collection where each user document has a `role` field (`"admin"` or `"user"`) so the admin panel's access check works.
+Create a Firebase project and enable:
 
-### Run the dev server
+- Firebase Authentication
+- Email/Password authentication
+- Cloud Firestore
+
+The application currently initializes Firebase through:
+
+```text
+src/firebase/config.jsx
+```
+
+For local development, Firebase configuration should eventually be moved to environment variables.
+
+---
+
+## 4. Start the development server
 
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173` (default Vite port).
+Vite will provide the local development URL in the terminal.
 
-### Build for production
+---
+
+# 🧪 Available Scripts
+
+### Development
+
+```bash
+npm run dev
+```
+
+Starts the Vite development server.
+
+### Production Build
 
 ```bash
 npm run build
-npm run preview   # preview the production build locally
+```
+
+Creates the production build.
+
+### Preview
+
+```bash
+npm run preview
+```
+
+Runs the production build locally.
+
+### Lint
+
+```bash
+npm run lint
+```
+
+Runs ESLint.
+
+### Deployment
+
+```bash
+npm run deploy
+```
+
+Builds the application and deploys the `dist` directory through GitHub Pages.
+
+---
+
+# 🚀 Deployment
+
+The project is configured for GitHub Pages deployment.
+
+Configured homepage:
+
+```text
+https://tina-2107.github.io/Electronic
+```
+
+Deployment:
+
+```bash
+npm run deploy
+```
+
+The deployment architecture is:
+
+```text
+GitHub Repository
+       │
+       ▼
+npm run build
+       │
+       ▼
+dist/
+       │
+       ▼
+GitHub Pages
+       │
+       ▼
+React Application
+       │
+       ▼
+Firebase
 ```
 
 ---
 
-## Environment Variables
+# 🔐 Security Considerations
 
-The project currently hardcodes Firebase config in `src/firebase/config.jsx`. It's recommended to move these into a `.env` file (not committed) and read them via `import.meta.env`:
+Authentication is implemented using Firebase Authentication and admin access is currently checked through the authenticated user's Firestore role.
 
-```env
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+However, the frontend admin check should **not be considered the complete security boundary**.
+
+For production deployment, Firestore Security Rules should independently enforce:
+
+```text
+Normal User
+ ├── Read own profile
+ └── Read own orders
+
+Admin
+ ├── Manage products
+ ├── Manage inventory
+ └── Manage orders
 ```
 
-Then in `firebase/config.jsx`:
+Client-side route protection can improve UX, but it cannot prevent a malicious client from directly attempting Firebase operations.
 
-```js
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+---
+
+# ⚠️ Current Limitations
+
+The project is actively being developed. The following areas are known limitations of the current implementation.
+
+### Product data
+
+The storefront currently uses product data from:
+
+```text
+src/data/products.js
 ```
 
-Remember to add `.env` to `.gitignore`.
+while admin product management uses Firestore.
+
+The planned architecture is to make Firestore the single source of truth for products.
+
+### Product details
+
+The `/product/:id` route exists, but the product-loading flow still needs to be connected properly to the route parameter and Firestore.
+
+### Order history
+
+The `/orders` route exists but the customer-facing order history requires further implementation.
+
+### Payments
+
+There is currently no real payment gateway integration.
+
+The checkout flow creates an order but does not process real card or UPI payments.
+
+### Authorization
+
+Admin authorization currently includes client-side role checking. Production Firestore Security Rules still need to enforce the authorization boundary independently.
+
+### State management
+
+The project currently contains both:
+
+```text
+React Context
++
+Redux Toolkit
+```
+
+The cart functionality currently relies on React Context, while Redux Toolkit is also configured in the application.
+
+A future refactor will establish a clearer single source of truth for application state.
+
+### Scalability
+
+Some admin dashboard metrics currently depend on reading Firestore collections and calculating statistics on the client. This approach is suitable for a small project but should be replaced with scalable queries or aggregated statistics for a larger dataset.
+
+# 📚 What I Learned
+
+Building D-Light involved practical experience with:
+
+- React component architecture
+- React Router
+- Firebase Authentication
+- Cloud Firestore
+- CRUD operations
+- Role-based application flows
+- React Context
+- Redux Toolkit
+- Browser persistence with `localStorage`
+- Form validation
+- E-commerce cart architecture
+- Inventory management
+- Order workflows
+- Responsive UI development
+- Git and GitHub
+- Static deployment with GitHub Pages
+
+The project also exposed several real-world engineering trade-offs around client-side authorization, state management, database design, scalability, and payment security.
 
 ---
 
-## Available Scripts
+# 🔮 Future Improvements
 
-| Script            | Description                                  |
-|--------------------|------------------------------------------------|
-| `npm run dev`        | Start the Vite dev server                        |
-| `npm run build`       | Type-check-free production build via Vite        |
-| `npm run preview`     | Preview the production build locally               |
-| `npm run lint`        | Run ESLint across the project                       |
-| `npm run deploy`       | Build and deploy to GitHub Pages (`gh-pages`)        |
+Potential future improvements include:
 
----
-
-## Routing Overview
-
-**Public / storefront**
-
-| Path              | Page              |
-|--------------------|---------------------|
-| `/`                  | Home                 |
-| `/products`           | AllProducts (filterable by `category`, `brand`, `search` query params) |
-| `/product/:id`         | ProductDetails         |
-| `/cart`                | Cart                    |
-| `/wishlist`             | Wishlist                 |
-| `/checkout`              | Checkout                  |
-| `/orders`                 | Orders                     |
-| `/login`, `/signup`        | Auth pages                   |
-| `/unauthorized`             | Access-denied page             |
-| `*`                          | 404 (NoPage)                     |
-
-**Admin** (nested under `/admin`, guarded by `AdminLayout`)
-
-| Path                         | Page              |
-|--------------------------------|---------------------|
-| `/admin/dashboard`               | AdminDashboard        |
-| `/admin/products`                 | ManageProducts          |
-| `/admin/add-product`                | AddProduct                |
-| `/admin/edit-product/:id`             | EditProduct                  |
-| `/admin/stock`                          | ManageStock                    |
-| `/admin/orders`                          | AdminOrders                      |
+- Real payment integration
+- Firestore-based product search and pagination
+- Customer order tracking
+- Product reviews and ratings
+- Product image upload through Firebase Storage
+- Better admin analytics
+- Coupon and discount system
+- Stock reservation during checkout
+- Email order notifications
+- Automated testing
+- CI/CD pipeline
+- Production monitoring
+- Improved accessibility
+- Performance optimization
 
 ---
 
-## State Management
+# 🤝 Contributing
 
-- **Cart** — `src/context/CartContext.jsx` (`useCart()`), used throughout the storefront (Navbar badge, ProductCard, Cart page, Checkout).
-- **Wishlist** — `src/context/WishlistContext.jsx` (`useWishlist()`).
-- **Auth** — `src/context/AuthProvider.jsx` + `authContextValue.js` (`useAuth()`), backed by Firebase Auth + a Firestore `users` collection for role lookup.
-- **Redux Toolkit** — `src/redux/store.jsx` + `cartSlice.jsx` are configured and provided at the root (`main.jsx`), but no component currently dispatches to or reads from this store. It's effectively unused right now — see [Known Issues](#known-issues).
+Contributions and suggestions are welcome.
 
----
+### Development workflow
 
-## Known Issues
+```bash
+git checkout -b feature/your-feature
+```
 
-This project is mid-development. Notable open issues:
+Make your changes, then validate:
 
-- **Product details page** doesn't fetch a product by route param — visiting `/product/:id` currently renders an empty page. `ProductDetails.jsx` also references an undestructured `name` variable.
-- **Two disconnected product sources**: the admin panel writes to Firestore, but the storefront's `/products` page reads from the static `src/data/products.js` file. Products added via the admin panel won't appear on the storefront.
-- **Category filters don't line up** between the homepage `CategoryGrid` labels and the categories used in `data/products.js`, so some category clicks return zero results.
-- **Search box on the admin "Manage Products" page** doesn't actually filter the list yet.
-- **Pagination counts on "Manage Products"** are inaccurate (total product count isn't fetched separately from the paginated query).
-- **Signup form** doesn't persist `fullName`/`phone`/`role` to Firestore, so that data is lost after account creation.
-- **Redux store is unused** — cart state lives entirely in `CartContext`.
-- A few placeholder strings (`[attached_file:1]`) are still present in `Footer.jsx` and `HeroBanner.jsx` and need to be removed.
+```bash
+npm run lint
+npm run build
+```
 
----
+Commit your changes:
 
-## Roadmap / Suggested Next Steps
+```bash
+git add .
+git commit -m "feat: describe your change"
+```
 
-1. Unify product data on Firestore (remove the static `data/products.js` in favor of a shared `services/products.js`).
-2. Fix `ProductDetails` to fetch by `useParams().id`.
-3. Align category names across `CategoryGrid`, `AllProducts` filters, and the product schema.
-4. Wire up search/filter logic in `ManageProducts`.
-5. Decide on Redux vs. Context for cart state and remove the unused one.
-6. Move Firebase config to environment variables and add Firestore security rules restricting writes to admins.
-7. Add a test setup (e.g. Vitest + React Testing Library) for context reducers and key components.
+Push the branch:
+
+```bash
+git push origin feature/your-feature
+```
+
+Then open a pull request.
 
 ---
 
-## Contributing
+# 👩‍💻 Author
 
-1. Fork the repo and create a feature branch.
-2. Run `npm run lint` before committing.
-3. Keep components small and colocate feature-specific components under their relevant folder (`components/products`, `components/homepage`, etc.).
-4. Open a PR with a clear description of the change and any relevant screenshots for UI changes.
+**Tina Verma**
+
+GitHub:
+https://github.com/Tina-2107
+
+Repository:
+https://github.com/Tina-2107/Electronic
 
 ---
 
-## License
+## 📄 License
 
-This project is licensed under the [MIT License](./LICENSE).
+A license file is not currently included in the repository.
+
+Add a `LICENSE` file before explicitly presenting the project as open-source under a specific license.
